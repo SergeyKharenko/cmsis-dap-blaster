@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# CMSIS-DAP rule adapted from OpenOCD's contrib/60-openocd.rules:
+# https://github.com/openocd-org/openocd/blob/master/contrib/60-openocd.rules
+
+ACTION!="add|change", GOTO="cmsis_dap_blaster_rules_end"
+SUBSYSTEM!="usb|tty|hidraw", GOTO="cmsis_dap_blaster_rules_end"
+
+# CMSIS-DAP compatible adapters (OpenOCD matching, local-session access).
+ATTRS{product}=="*CMSIS-DAP*", MODE="0660", TAG+="uaccess"
+# Also accept DAPLink product strings, as the device discovery code does.
+ATTRS{product}=="*DAPLink*", MODE="0660", TAG+="uaccess"
+
+LABEL="cmsis_dap_blaster_rules_end"

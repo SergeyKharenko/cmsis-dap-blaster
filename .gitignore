@@ -1,0 +1,11 @@
+# CMake build directories
+/build/
+/build-*/
+/cmake-build-*/
+
+# Plugin and scan tool binaries
+/export/
+
+# Local CMake and Visual Studio settings
+/CMakeUserPresets.json
+/.vs/
