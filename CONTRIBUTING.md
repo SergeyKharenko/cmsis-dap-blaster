@@ -34,6 +34,51 @@ calibration logic in the same shape as the reference. Backend differences belong
 in USB discovery, packet encoding and clock requests: CMSIS-DAP uses HID/bulk
 commands and firmware-selected rates instead of D2XX and MPSSE dividers.
 
+## Custom builds
+
+The build scripts default to `Release`. Set `CMSIS_DAP_BUILD_DIR` to change the
+build directory, `CMAKE_BUILD_TYPE` to select a Linux configuration, or
+`CONFIGURATION` to select a Windows configuration. Rerun `build.ps1` after
+changing `CONFIGURATION` so the dependency libraries match the selected runtime.
+
+| CMake option | Default | Purpose |
+| --- | --- | --- |
+| `BUILD_PLUGIN` | `ON` | Build the Quartus plugin |
+| `BUILD_SCAN_TOOL` | `ON` | Build `cmsis_dap_scan` |
+| `CMSIS_DAP_ROOT` | `lib/<platform>-x86_64` | Prefix for hidapi and libusb dependencies |
+| `CMSIS_DAP_OUTPUT_DIRECTORY` | `export/` | Output directory for the plugin and scanner |
+
+For example, build only the scanner with a separately built dependency prefix:
+
+```bash
+cmake -S . -B build -DBUILD_PLUGIN=OFF -DCMSIS_DAP_ROOT=/path/to/dependencies
+cmake --build build --target cmsis_dap_scan --parallel
+```
+
+If headers and libraries are stored separately, set `HIDAPI_INCLUDE_DIR`,
+`HIDAPI_LIBRARY`, `LIBUSB_INCLUDE_DIR` and `LIBUSB_LIBRARY` explicitly. Include
+directories must contain `hidapi.h` and `libusb.h` respectively; library variables
+name complete library paths.
+
+Debug and Release share the default binary output directory. Use separate
+`CMSIS_DAP_OUTPUT_DIRECTORY` values in separate build directories to keep both,
+or clean the targets before switching configurations in the same output directory.
+
+MSVC defaults to the static runtime (`/MT`, or `/MTd` in Debug). Match the runtime
+of static dependencies; set `CMAKE_MSVC_RUNTIME_LIBRARY` explicitly when linking
+dependencies built for `/MD`. The Windows dependency script builds hidapi and
+libusb with `/MTd` for Debug and `/MT` for other supported configurations.
+
+An optional installation prefix places the plugin under `lib` or `lib64`, the
+scanner under `bin`, and the Linux udev rule under `share/cmsis-dap-blaster`:
+
+```bash
+cmake --install build --config Release --prefix /path/to/install
+```
+
+Installing to a separate prefix does not deploy the plugin into Quartus. Follow
+the [deployment guide](docs/quartus-integration.md#deployment) for that step.
+
 ## Validation
 
 Build both targets using the [README instructions](README.md#building), then

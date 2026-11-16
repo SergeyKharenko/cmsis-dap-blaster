@@ -273,7 +273,7 @@ uint32_t cmsis_dap_clock_bits(JTAGClientData *client, int tms, int tdi, int bit_
                 {
                     return client->transport_status;
                 }
-                uint32_t status = cmsis_dap_auto_adjust_clock(client);
+                status = cmsis_dap_auto_adjust_clock(client);
                 client->transport_status = status;
                 if (status != 0)
                 {

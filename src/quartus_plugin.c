@@ -43,11 +43,6 @@ static JtagClientOperations hw_device = {
     .RemoveDriver = NULL, // No persistent driver configuration to remove.
 };
 
-#ifdef _WIN32
-__declspec(dllexport)
-#else
-__attribute__((visibility("default")))
-#endif
 void *get_supported_hardware(int index)
 {
     return index == 0 && cmsis_dap_has_supported_device() ? &hw_device : NULL;

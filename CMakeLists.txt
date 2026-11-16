@@ -78,6 +78,7 @@ if(BUILD_PLUGIN OR BUILD_SCAN_TOOL)
         INTERFACE_INCLUDE_DIRECTORIES "${LIBUSB_INCLUDE_DIR}"
     )
     if(WIN32)
+        target_compile_definitions(HIDAPI::hidapi INTERFACE HID_API_NO_EXPORT_DEFINE)
         target_link_libraries(HIDAPI::hidapi INTERFACE setupapi hid)
         target_link_libraries(LIBUSB::libusb INTERFACE setupapi advapi32 cfgmgr32)
     else()
@@ -127,6 +128,11 @@ if(BUILD_PLUGIN OR BUILD_SCAN_TOOL)
     foreach(target IN LISTS blaster_targets)
         cmsis_dap_target_defaults(${target})
         target_link_libraries(${target} PRIVATE cmsis_dap_core HIDAPI::hidapi LIBUSB::libusb)
+        if(MSVC)
+            # The bundled libusb Release library contains /GL objects.
+            target_link_options(${target} PRIVATE
+                "$<$<CONFIG:Release,RelWithDebInfo,MinSizeRel>:/LTCG>")
+        endif()
         foreach(kind LIBRARY RUNTIME ARCHIVE)
             set_target_properties(${target} PROPERTIES
                 ${kind}_OUTPUT_DIRECTORY "$<1:${CMSIS_DAP_OUTPUT_DIRECTORY}>")

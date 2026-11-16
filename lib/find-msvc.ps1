@@ -1,3 +1,10 @@
+function Invoke-CmsisDapCommand($Command, $CommandArguments) {
+    & $Command @CommandArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Command failed with exit code $LASTEXITCODE."
+    }
+}
+
 function Get-CmsisDapMsvcToolchain {
     $vswhereCommand = Get-Command vswhere.exe -ErrorAction SilentlyContinue
     if ($vswhereCommand) {
@@ -9,19 +16,21 @@ function Get-CmsisDapMsvcToolchain {
         throw "vswhere.exe was not found. Install Visual Studio with the C++ desktop workload."
     }
 
-    $installPath = (& $vswhere -latest -products * `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationPath).Trim()
-    $installVersion = (& $vswhere -latest -products * `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationVersion).Trim()
-    if (-not $installPath -or -not $installVersion) {
+    $installPath = [string](Invoke-CmsisDapCommand $vswhere @(
+        "-latest", "-products", "*", "-requires",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"))
+    $installVersion = [string](Invoke-CmsisDapCommand $vswhere @(
+        "-latest", "-products", "*", "-requires",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationVersion"))
+    if ([string]::IsNullOrWhiteSpace($installPath) -or [string]::IsNullOrWhiteSpace($installVersion)) {
         throw "No Visual Studio installation with the x64 C++ toolset was found."
     }
+    $installPath = $installPath.Trim()
+    $installVersion = $installVersion.Trim()
 
     $major = [int]($installVersion.Split('.')[0])
     $generator = $null
-    foreach ($line in (& cmake --help)) {
+    foreach ($line in (Invoke-CmsisDapCommand cmake @("--help"))) {
         if ($line -match "Visual Studio ([0-9]+) ([0-9]{4})" -and [int]$Matches[1] -eq $major) {
             $generator = "Visual Studio $($Matches[1]) $($Matches[2])"
             break
@@ -43,5 +52,6 @@ function Get-CmsisDapMsvcToolchain {
     [pscustomobject]@{
         Generator = $generator
         MSBuild = $msbuild
+        InstallPath = $installPath
     }
 }

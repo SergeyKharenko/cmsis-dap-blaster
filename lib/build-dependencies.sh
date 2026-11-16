@@ -40,6 +40,7 @@ mkdir -p "$build_root/libusb"
 
 PKG_CONFIG_PATH="$prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}" \
 cmake -S "$hidapi_source" -B "$build_root/hidapi" \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DBUILD_SHARED_LIBS=OFF \
     -DHIDAPI_WITH_HIDRAW=OFF \
     -DHIDAPI_WITH_LIBUSB=ON \

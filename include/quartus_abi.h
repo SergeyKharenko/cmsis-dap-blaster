@@ -68,6 +68,11 @@ typedef struct
 } JtagClientOperations;
 
 /* The only symbol loaded by Quartus. The returned table has static lifetime. */
+#ifdef _WIN32
+__declspec(dllexport)
+#else
+__attribute__((visibility("default")))
+#endif
 void *get_supported_hardware(int index);
 
 #ifdef __cplusplus
