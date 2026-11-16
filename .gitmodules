@@ -1,0 +1,8 @@
+[submodule "lib/hidapi"]
+	path = lib/hidapi
+	url = https://github.com/libusb/hidapi.git
+	tag = hidapi-0.14.0
+[submodule "lib/libusb"]
+	path = lib/libusb
+	url = https://github.com/libusb/libusb.git
+	tag = v1.0.29

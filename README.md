@@ -14,6 +14,7 @@ not a requirement for this project.
 ```text
 include/        Quartus ABI definitions and internal module declarations
 src/            Device management, USB transport, clocks and JTAG buffering
+lib/            Third-party dependency sources
 tool/           Standalone cmsis_dap_scan application
 docs/           Quartus integration and callback reference
 ```
@@ -25,40 +26,32 @@ responsibilities and style.
 ## Build requirements
 
 - CMake 3.21 or later.
-- An x86_64 C11 compiler: GCC/Clang on Linux or Visual Studio 2022 on Windows.
-- [hidapi](https://github.com/libusb/hidapi) headers and library. Linux builds
-  accept either `hidapi-hidraw` or `hidapi-libusb`.
-- [libusb 1.0](https://libusb.info/) headers and library.
+- An x86_64 C11 compiler: GCC/Clang on Linux or a supported Visual Studio installation on Windows.
+- Linux: the standard C build tools.
+- Windows: Visual Studio C++ build tools, `vswhere` and PowerShell.
 
-Install the development packages for your platform, or set `CMSIS_DAP_ROOT`
-to an external dependency installation prefix. CMake searches system locations
-by default and checks an explicitly supplied prefix first. Use libraries built
-for the same architecture and compiler as the project. Static builds are also
-accepted; shared builds require their runtime libraries at deployment.
-Windows hardware access still requires the appropriate HID or WinUSB driver.
+The build uses the bundled hidapi and libusb dependencies. Windows hardware
+access still requires the appropriate HID or WinUSB driver.
 
 ## Building
 
 Run commands from the repository root.
 
-### Linux
-
-Install the hidapi and libusb development packages for your distribution, or
-provide an external dependency prefix, then build:
+On Linux:
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
+./build.sh
 ```
 
-### Windows
-
-From PowerShell with Visual Studio's C/C++ build tools installed:
+On Windows, from a Visual Studio developer PowerShell:
 
 ```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release --parallel
+powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
+
+Set `CMSIS_DAP_BUILD_DIR` to change the build directory. Linux uses
+`CMAKE_BUILD_TYPE` (default `Release`); Windows uses `CONFIGURATION` (default
+`Release`).
 
 ### Targets and options
 
@@ -71,17 +64,17 @@ cmake --build build --config Release --parallel
 | --- | --- | --- |
 | `BUILD_PLUGIN` | `ON` | Build the Quartus plugin |
 | `BUILD_SCAN_TOOL` | `ON` | Build `cmsis_dap_scan` |
-| `CMSIS_DAP_ROOT` | Empty (system locations) | Optional prefix for hidapi and libusb dependencies |
+| `CMSIS_DAP_ROOT` | `lib/<platform>-x86_64` | Prefix for static hidapi and libusb dependencies |
 | `CMSIS_DAP_OUTPUT_DIRECTORY` | `export/` | Select the production binary output directory |
 
-For example, build only the scanner with dependencies outside the repository:
+For example, build only the scanner with a separately built dependency prefix:
 
 ```bash
 cmake -S . -B build -DBUILD_PLUGIN=OFF -DCMSIS_DAP_ROOT=/path/to/dependencies
 cmake --build build --target cmsis_dap_scan --parallel
 ```
 
-If the headers and libraries are stored separately, set `HIDAPI_INCLUDE_DIR`,
+If the headers and static libraries are stored separately, set `HIDAPI_INCLUDE_DIR`,
 `HIDAPI_LIBRARY`, `LIBUSB_INCLUDE_DIR` and `LIBUSB_LIBRARY` explicitly. Include
 directories must contain `hidapi.h` and `libusb.h` respectively; library variables
 name complete library paths. Debug and Release builds share the default output

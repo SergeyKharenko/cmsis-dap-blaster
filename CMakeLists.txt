@@ -40,30 +40,39 @@ set(CMSIS_DAP_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/export" CACHE PATH
     "Output directory for plugin and scan tool binaries")
 
 if(BUILD_PLUGIN OR BUILD_SCAN_TOOL)
-    set(CMSIS_DAP_ROOT "" CACHE PATH "Optional hidapi and libusb dependency directory")
+    if(WIN32)
+        set(CMSIS_DAP_PLATFORM windows-x86_64)
+    else()
+        set(CMSIS_DAP_PLATFORM linux-x86_64)
+    endif()
+    set(CMSIS_DAP_ROOT "${PROJECT_SOURCE_DIR}/lib/${CMSIS_DAP_PLATFORM}" CACHE PATH
+        "hidapi and libusb dependency directory")
     find_path(HIDAPI_INCLUDE_DIR NAMES hidapi.h
         HINTS "${CMSIS_DAP_ROOT}"
         PATH_SUFFIXES include/hidapi hidapi include)
-    find_library(HIDAPI_LIBRARY NAMES hidapi-hidraw hidapi-libusb hidapi
+    find_file(HIDAPI_LIBRARY NAMES
+        hidapi-hidraw.lib hidapi-libusb.lib hidapi.lib
+        libhidapi-libusb.a libhidapi-hidraw.a libhidapi.a
         HINTS "${CMSIS_DAP_ROOT}" PATH_SUFFIXES lib lib64)
     find_path(LIBUSB_INCLUDE_DIR NAMES libusb.h
         HINTS "${CMSIS_DAP_ROOT}"
         PATH_SUFFIXES include/libusb-1.0 libusb-1.0 include)
-    find_library(LIBUSB_LIBRARY NAMES usb-1.0 libusb-1.0
+    find_file(LIBUSB_LIBRARY NAMES libusb-1.0.lib libusb-1.0.a
         HINTS "${CMSIS_DAP_ROOT}" PATH_SUFFIXES lib lib64)
     if(NOT HIDAPI_INCLUDE_DIR OR NOT HIDAPI_LIBRARY OR NOT LIBUSB_INCLUDE_DIR OR NOT LIBUSB_LIBRARY)
         message(FATAL_ERROR
-            "hidapi or libusb headers and library not found. Install development packages, "
-            "set CMSIS_DAP_ROOT to their installation prefix, or set HIDAPI_INCLUDE_DIR, "
-            "HIDAPI_LIBRARY, LIBUSB_INCLUDE_DIR and LIBUSB_LIBRARY.")
+            "Static hidapi or libusb dependencies were not found. Run "
+            "lib/build-dependencies.ps1 (Windows) or lib/build-dependencies.sh (Linux), "
+            "set CMSIS_DAP_ROOT to an installed dependency prefix, or set HIDAPI_INCLUDE_DIR, "
+            "HIDAPI_LIBRARY, LIBUSB_INCLUDE_DIR and LIBUSB_LIBRARY explicitly.")
     endif()
 
-    add_library(HIDAPI::hidapi UNKNOWN IMPORTED)
+    add_library(HIDAPI::hidapi STATIC IMPORTED)
     set_target_properties(HIDAPI::hidapi PROPERTIES
         IMPORTED_LOCATION "${HIDAPI_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${HIDAPI_INCLUDE_DIR}"
     )
-    add_library(LIBUSB::libusb UNKNOWN IMPORTED)
+    add_library(LIBUSB::libusb STATIC IMPORTED)
     set_target_properties(LIBUSB::libusb PROPERTIES
         IMPORTED_LOCATION "${LIBUSB_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${LIBUSB_INCLUDE_DIR}"
@@ -75,6 +84,13 @@ if(BUILD_PLUGIN OR BUILD_SCAN_TOOL)
         set(THREADS_PREFER_PTHREAD_FLAG ON)
         find_package(Threads REQUIRED)
         target_link_libraries(HIDAPI::hidapi INTERFACE Threads::Threads)
+        if(HIDAPI_LIBRARY MATCHES "hidraw")
+            find_library(UDEV_LIBRARY NAMES udev)
+            if(UDEV_LIBRARY)
+                target_link_libraries(HIDAPI::hidapi INTERFACE "${UDEV_LIBRARY}")
+            endif()
+        endif()
+        target_link_libraries(LIBUSB::libusb INTERFACE Threads::Threads ${CMAKE_DL_LIBS} rt)
     endif()
 
 endif()

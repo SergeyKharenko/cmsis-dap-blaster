@@ -3,6 +3,11 @@
 /build-*/
 /cmake-build-*/
 
+# Locally built dependency prefixes and dependency build trees
+/lib/linux-x86_64/
+/lib/windows-x86_64/
+/lib/.build/
+
 # Plugin and scan tool binaries
 /export/
 
